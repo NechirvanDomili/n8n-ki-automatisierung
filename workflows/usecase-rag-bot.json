@@ -1,0 +1,97 @@
+{
+  "name": "Use Case - RAG Bot",
+  "active": false,
+  "version": "1.0",
+  "description": "Beispielworkflow für einen RAG-Chatbot in n8n.",
+  "nodes": [
+    {
+      "id": "1",
+      "name": "When Chat Message Received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "position": [200, 250],
+      "parameters": {}
+    },
+    {
+      "id": "2",
+      "name": "Generate Query Embedding",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "position": [450, 250],
+      "parameters": {}
+    },
+    {
+      "id": "3",
+      "name": "Vector Store Query",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "position": [700, 250],
+      "parameters": {
+        "operation": "query"
+      }
+    },
+    {
+      "id": "4",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [950, 250],
+      "parameters": {
+        "promptType": "define",
+        "text": "Beantworte die Anfrage mit dem bereitgestellten Kontext. Wenn Informationen fehlen, gib das transparent an."
+      }
+    },
+    {
+      "id": "5",
+      "name": "Respond to User",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [1200, 250],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "When Chat Message Received": {
+      "main": [
+        [
+          {
+            "node": "Generate Query Embedding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Query Embedding": {
+      "main": [
+        [
+          {
+            "node": "Vector Store Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector Store Query": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
