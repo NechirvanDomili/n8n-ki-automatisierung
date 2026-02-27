@@ -1,0 +1,105 @@
+{
+  "name": "Use Case - Salesforce Case Routing with AI",
+  "active": false,
+  "version": "1.0",
+  "description": "Beispielworkflow für automatische Case-Datenzuordnung in Salesforce mit n8n + KI.",
+  "nodes": [
+    {
+      "id": "1",
+      "name": "Salesforce Trigger",
+      "type": "n8n-nodes-base.salesforceTrigger",
+      "position": [200, 300],
+      "parameters": {
+        "event": "caseUpdated"
+      }
+    },
+    {
+      "id": "2",
+      "name": "Get Case Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [450, 300],
+      "parameters": {
+        "url": "={{$json.caseUrl}}",
+        "method": "GET"
+      }
+    },
+    {
+      "id": "3",
+      "name": "Extract Text",
+      "type": "n8n-nodes-base.code",
+      "position": [700, 300],
+      "parameters": {
+        "jsCode": "return items.map(item => ({ json: { ...item.json, extractedText: item.json.description || '' } }));"
+      }
+    },
+    {
+      "id": "4",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [950, 300],
+      "parameters": {
+        "promptType": "define",
+        "text": "Ordne den Case einer Kategorie zu und gib ein JSON mit Feldern 'category' und 'priority' zurück."
+      }
+    },
+    {
+      "id": "5",
+      "name": "Update Case",
+      "type": "n8n-nodes-base.salesforce",
+      "position": [1200, 300],
+      "parameters": {
+        "operation": "update",
+        "resource": "case"
+      }
+    }
+  ],
+  "connections": {
+    "Salesforce Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Case Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Case Data": {
+      "main": [
+        [
+          {
+            "node": "Extract Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Text": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Update Case",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
