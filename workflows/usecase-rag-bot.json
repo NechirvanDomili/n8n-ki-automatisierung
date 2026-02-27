@@ -2,7 +2,7 @@
   "name": "Use Case - RAG Bot",
   "active": false,
   "version": "1.1",
-  "description": "Erweiterter Beispielworkflow für einen RAG-Chatbot in n8n mit Kontextprüfung und Fallback.",
+  "description": "workflow für einen RAG-Chatbot in n8n mit Kontextprüfung und Fallback.",
   "nodes": [
     {
       "id": "1",
