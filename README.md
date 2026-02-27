@@ -32,7 +32,8 @@ Das Repo bündelt:
 │   └── praesentation.md   # Ausformulierter Inhalt der Präsentation
 ├── workflows/
 │   ├── usecase-rag-bot.json
-│   └── usecase-salesforce-case-routing.json
+│   ├── usecase-salesforce-case-routing.json
+│   └── all-nodes-from-workflow-images.json
 └── README.md
 ```
 

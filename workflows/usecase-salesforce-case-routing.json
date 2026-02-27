@@ -1,14 +1,14 @@
 {
   "name": "Use Case - Salesforce Case Routing with AI",
   "active": false,
-  "version": "1.0",
-  "description": "Beispielworkflow für automatische Case-Datenzuordnung in Salesforce mit n8n + KI.",
+  "version": "1.1",
+  "description": "Erweiterter Beispielworkflow für automatische Case-Datenzuordnung in Salesforce mit n8n + KI inkl. Routing und Fehlerpfad.",
   "nodes": [
     {
       "id": "1",
       "name": "Salesforce Trigger",
       "type": "n8n-nodes-base.salesforceTrigger",
-      "position": [200, 300],
+      "position": [180, 320],
       "parameters": {
         "event": "caseUpdated"
       }
@@ -17,7 +17,7 @@
       "id": "2",
       "name": "Get Case Data",
       "type": "n8n-nodes-base.httpRequest",
-      "position": [450, 300],
+      "position": [400, 320],
       "parameters": {
         "url": "={{$json.caseUrl}}",
         "method": "GET"
@@ -25,31 +25,86 @@
     },
     {
       "id": "3",
-      "name": "Extract Text",
-      "type": "n8n-nodes-base.code",
-      "position": [700, 300],
+      "name": "Load Attachments",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [620, 320],
       "parameters": {
-        "jsCode": "return items.map(item => ({ json: { ...item.json, extractedText: item.json.description || '' } }));"
+        "url": "={{$json.attachmentsUrl || ''}}",
+        "method": "GET"
       }
     },
     {
       "id": "4",
-      "name": "AI Agent",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "position": [950, 300],
+      "name": "Extract Text",
+      "type": "n8n-nodes-base.code",
+      "position": [840, 320],
       "parameters": {
-        "promptType": "define",
-        "text": "Ordne den Case einer Kategorie zu und gib ein JSON mit Feldern 'category' und 'priority' zurück."
+        "jsCode": "return items.map(item => ({ json: { ...item.json, extractedText: [item.json.subject, item.json.description, item.json.attachmentsText].filter(Boolean).join('\\n') } }));"
       }
     },
     {
       "id": "5",
+      "name": "Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [1060, 220],
+      "parameters": {
+        "model": "gpt-4o-mini"
+      }
+    },
+    {
+      "id": "6",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [1060, 380],
+      "parameters": {
+        "promptType": "define",
+        "text": "Ordne den Case einer Kategorie zu und gib ein JSON mit Feldern 'category', 'priority' und 'queue' zurück."
+      }
+    },
+    {
+      "id": "7",
+      "name": "Parse Structured Output",
+      "type": "n8n-nodes-base.code",
+      "position": [1280, 380],
+      "parameters": {
+        "jsCode": "return items.map(item => { const text = item.json.output || item.json.response || '{}'; let parsed = {}; try { parsed = JSON.parse(text); } catch (e) { parsed = { category: 'unknown', priority: 'medium', queue: 'triage' }; } return { json: { ...item.json, ...parsed } }; });"
+      }
+    },
+    {
+      "id": "8",
+      "name": "Route by Category",
+      "type": "n8n-nodes-base.switch",
+      "position": [1500, 380],
+      "parameters": {
+        "propertyName": "={{$json.category}}",
+        "rules": [
+          {
+            "value": "billing"
+          },
+          {
+            "value": "technical"
+          }
+        ],
+        "fallbackOutput": 2
+      }
+    },
+    {
+      "id": "9",
       "name": "Update Case",
       "type": "n8n-nodes-base.salesforce",
-      "position": [1200, 300],
+      "position": [1720, 380],
       "parameters": {
         "operation": "update",
         "resource": "case"
+      }
+    },
+    {
+      "id": "10",
+      "name": "Notify on Error",
+      "type": "n8n-nodes-base.slack",
+      "position": [1720, 560],
+      "parameters": {
+        "text": "Fehler im Salesforce-AI-Routing-Workflow: {{$json.error || 'Unbekannter Fehler'}}"
       }
     }
   ],
@@ -66,6 +121,17 @@
       ]
     },
     "Get Case Data": {
+      "main": [
+        [
+          {
+            "node": "Load Attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Attachments": {
       "main": [
         [
           {
@@ -87,11 +153,69 @@
         ]
       ]
     },
+    "Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "AI Agent": {
       "main": [
         [
           {
+            "node": "Parse Structured Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Structured Output": {
+      "main": [
+        [
+          {
+            "node": "Route by Category",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Category": {
+      "main": [
+        [
+          {
             "node": "Update Case",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Case",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Case",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Case": {
+      "main": [
+        [
+          {
+            "node": "Notify on Error",
             "type": "main",
             "index": 0
           }
