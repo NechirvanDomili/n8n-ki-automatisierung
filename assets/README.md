@@ -2,6 +2,7 @@
 
 <img width="1335" height="746" alt="image" src="https://github.com/user-attachments/assets/f65b3ef2-087e-4815-a44f-11ccaa994c18" />
 
+[N8N_Präsentation_Nechirvan.pdf](https://github.com/user-attachments/files/25605485/N8N_Prasentation_Nechirvan.pdf)
 
 
 <img width="1510" height="761" alt="image" src="https://github.com/user-attachments/assets/7142be4a-4c86-4250-b88f-480b8aa80376" />
