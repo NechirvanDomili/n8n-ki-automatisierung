@@ -1,52 +1,132 @@
 {
   "name": "Use Case - RAG Bot",
   "active": false,
-  "version": "1.0",
-  "description": "Beispielworkflow für einen RAG-Chatbot in n8n.",
+  "version": "1.1",
+  "description": "Erweiterter Beispielworkflow für einen RAG-Chatbot in n8n mit Kontextprüfung und Fallback.",
   "nodes": [
     {
       "id": "1",
       "name": "When Chat Message Received",
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
-      "position": [200, 250],
+      "position": [180, 280],
       "parameters": {}
     },
     {
       "id": "2",
-      "name": "Generate Query Embedding",
-      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
-      "position": [450, 250],
-      "parameters": {}
+      "name": "Prepare User Query",
+      "type": "n8n-nodes-base.set",
+      "position": [400, 280],
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            {
+              "name": "query",
+              "value": "={{$json.message || $json.chatInput || ''}}"
+            }
+          ]
+        }
+      }
     },
     {
       "id": "3",
+      "name": "Generate Query Embedding",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "position": [620, 280],
+      "parameters": {}
+    },
+    {
+      "id": "4",
       "name": "Vector Store Query",
       "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
-      "position": [700, 250],
+      "position": [840, 280],
       "parameters": {
         "operation": "query"
       }
     },
     {
-      "id": "4",
+      "id": "5",
+      "name": "Has Context?",
+      "type": "n8n-nodes-base.if",
+      "position": [1060, 280],
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$json.matches ? $json.matches.length : 0}}",
+              "operation": "larger",
+              "value2": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "6",
+      "name": "Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [1280, 200],
+      "parameters": {
+        "model": "gpt-4o-mini"
+      }
+    },
+    {
+      "id": "7",
+      "name": "Conversation Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "position": [1280, 360],
+      "parameters": {
+        "contextWindowLength": 8
+      }
+    },
+    {
+      "id": "8",
       "name": "AI Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
-      "position": [950, 250],
+      "position": [1500, 280],
       "parameters": {
         "promptType": "define",
         "text": "Beantworte die Anfrage mit dem bereitgestellten Kontext. Wenn Informationen fehlen, gib das transparent an."
       }
     },
     {
-      "id": "5",
+      "id": "9",
+      "name": "Fallback Answer",
+      "type": "n8n-nodes-base.set",
+      "position": [1280, 500],
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "answer",
+              "value": "Ich habe in den verfügbaren Dokumenten keinen ausreichenden Kontext gefunden. Bitte formuliere die Frage genauer oder ergänze Quellen."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "10",
       "name": "Respond to User",
       "type": "n8n-nodes-base.respondToWebhook",
-      "position": [1200, 250],
+      "position": [1720, 380],
       "parameters": {}
     }
   ],
   "connections": {
     "When Chat Message Received": {
+      "main": [
+        [
+          {
+            "node": "Prepare User Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare User Query": {
       "main": [
         [
           {
@@ -72,7 +152,25 @@
       "main": [
         [
           {
+            "node": "Has Context?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Context?": {
+      "main": [
+        [
+          {
             "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fallback Answer",
             "type": "main",
             "index": 0
           }
@@ -85,6 +183,39 @@
           {
             "node": "Respond to User",
             "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fallback Answer": {
+      "main": [
+        [
+          {
+            "node": "Respond to User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
             "index": 0
           }
         ]

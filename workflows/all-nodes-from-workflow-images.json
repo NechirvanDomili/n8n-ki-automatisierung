@@ -1,0 +1,36 @@
+{
+  "name": "Workflow-Bildkatalog - Alle Nodes",
+  "description": "Vollständige Node-Übersicht der gezeigten Workflow-Bausteine aus RAG-Bot und Salesforce-Case-Routing.",
+  "workflows": [
+    {
+      "workflow": "RAG Bot",
+      "nodes": [
+        { "name": "When Chat Message Received", "type": "@n8n/n8n-nodes-langchain.chatTrigger", "role": "Startet den Chat-Workflow bei neuer Nutzeranfrage." },
+        { "name": "Prepare User Query", "type": "n8n-nodes-base.set", "role": "Bereitet Query und Metadaten für die weiteren Schritte auf." },
+        { "name": "Generate Query Embedding", "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi", "role": "Erstellt semantische Embeddings für die Suche." },
+        { "name": "Vector Store Query", "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone", "role": "Sucht passende Kontextpassagen im Vektorindex." },
+        { "name": "Has Context?", "type": "n8n-nodes-base.if", "role": "Prüft, ob genügend Kontext gefunden wurde." },
+        { "name": "Chat Model", "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi", "role": "LLM für Antwortgenerierung." },
+        { "name": "Conversation Memory", "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow", "role": "Speichert Chat-Verlauf für Multi-Turn-Kontext." },
+        { "name": "AI Agent", "type": "@n8n/n8n-nodes-langchain.agent", "role": "Orchestriert Prompt, Kontext und Modelausgabe." },
+        { "name": "Fallback Answer", "type": "n8n-nodes-base.set", "role": "Erzeugt transparente Antwort bei fehlendem Kontext." },
+        { "name": "Respond to User", "type": "n8n-nodes-base.respondToWebhook", "role": "Gibt finale Antwort an den User zurück." }
+      ]
+    },
+    {
+      "workflow": "Salesforce Case Routing with AI",
+      "nodes": [
+        { "name": "Salesforce Trigger", "type": "n8n-nodes-base.salesforceTrigger", "role": "Startet bei neuen/aktualisierten Cases." },
+        { "name": "Get Case Data", "type": "n8n-nodes-base.httpRequest", "role": "Lädt Case-Detaildaten per API." },
+        { "name": "Load Attachments", "type": "n8n-nodes-base.httpRequest", "role": "Lädt zugehörige Anhänge/Dokumente." },
+        { "name": "Extract Text", "type": "n8n-nodes-base.code", "role": "Extrahiert und normalisiert relevante Textinhalte." },
+        { "name": "Chat Model", "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi", "role": "LLM für Klassifikation/Zuordnung." },
+        { "name": "AI Agent", "type": "@n8n/n8n-nodes-langchain.agent", "role": "Erstellt Strukturvorschlag für Category/Priority." },
+        { "name": "Parse Structured Output", "type": "n8n-nodes-base.code", "role": "Validiert und parst die KI-Antwort als JSON." },
+        { "name": "Route by Category", "type": "n8n-nodes-base.switch", "role": "Leitet Cases je Kategorie an passende Queue/Owner." },
+        { "name": "Update Case", "type": "n8n-nodes-base.salesforce", "role": "Schreibt Zuordnung in Salesforce zurück." },
+        { "name": "Notify on Error", "type": "n8n-nodes-base.slack", "role": "Sendet Fehlerbenachrichtigung bei Ausnahmefällen." }
+      ]
+    }
+  ]
+}
