@@ -1,6 +1,6 @@
 # n8n & KI: Intelligente Automatisierung
 
-Dieses Repository enthält die Projektmaterialien zur Präsentation
+Dieses Repository enthält die Projektmaterialien zur 
 **„n8n & KI: Intelligente Automatisierung“** von **Nechirvan Haso Sodo Domili**
 (HTW Berlin, 01.12.2025).
 
@@ -9,7 +9,7 @@ Dieses Repository enthält die Projektmaterialien zur Präsentation
 Das Repo bündelt:
 
 - Präsentationsinhalte (Agenda, Kernaussagen, Best Practices)
-- Beispiel-Workflows für n8n (RAG-Bot und Salesforce-Use-Case)
+- Workflows für n8n (RAG-Bot und Salesforce-Use-Case)
 - Platzhalter/Struktur für Folienbilder und Visuals
 
 ## Agenda
@@ -45,9 +45,7 @@ Das Repo bündelt:
 3. Eine Datei aus `workflows/` auswählen
 4. Credentials/Endpoints anpassen
 
-### 2) Bilder hinzufügen
 
-Lege deine Folienbilder in `assets/` ab (siehe Benennung in `assets/README.md`).
 
 ## Motivation (Kurzfassung)
 
